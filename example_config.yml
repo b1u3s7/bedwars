@@ -1,0 +1,54 @@
+---
+mode: # any key in mode is a gamemode (/bw join [key])
+  bwduel: # requires name, team_size, team_amount and min_req_players-(to start game) as well as map
+    name: Bedwars 1vs1
+    team_size: 1
+    team_amount: 2
+    min_req_players: 1
+    map: # keys for maps
+      0: # map requires name and world, team and gen
+        name: Stone
+        world: bwmap-stone
+        team: # keys for teams
+          0: # requires spawn gen and shop
+            spawn:
+              x: 0
+              y: 65
+              z: 16
+            gen:
+              x: 0
+              y: 65
+              z: 18
+            shop:
+              x: -2
+              y: 65
+              z: 17
+          1:
+            spawn:
+              x: 0
+              y: 65
+              z: -16
+            gen:
+              x: 0
+              y: 65
+              z: -18
+            shop:
+              x: 2
+              y: 65
+              z: -17
+        gen: # type of gen (iron and gold)
+          iron: # no limit on amount of gens
+            0: # coords
+              x: 2
+              y: 65
+              z: 2
+            1:
+              x: -2
+              y: 65
+              z: -2
+          gold: # same here
+            0:
+              x: 0
+              y: 65
+              z: 0
+...
