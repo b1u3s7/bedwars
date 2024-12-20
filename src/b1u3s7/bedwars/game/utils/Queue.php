@@ -12,7 +12,7 @@ class Queue
     private int $requiredPlayer;
     private array $players = [];
     private string $modeName;
-    private int $mapId = 0;
+    private int $mapId;
 
     public function __construct(string $mode)
     {
@@ -20,9 +20,7 @@ class Queue
         $this->maximumPlayers = GameUtils::$config->getNested("mode.$mode.team_size") * GameUtils::$config->getNested("mode.$mode.team_amount");
         $this->requiredPlayer = GameUtils::$config->getNested("mode.$mode.min_req_players");
         $this->modeName = GameUtils::$config->getNested("mode.$mode.name");
-
-        // for testing
-        $this->maximumPlayers = 1;
+        $this->mapId = array_rand(GameUtils::$config->getNested("mode.$mode.map"));
     }
 
     public function getMode(): string
