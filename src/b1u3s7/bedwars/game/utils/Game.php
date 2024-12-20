@@ -39,6 +39,7 @@ use pocketmine\world\World;
 class Game
 {
     private string $mode;
+    private int $mapId;
     private int $teamAmount;
     private int $teamSize;
     public World $world;
@@ -56,6 +57,7 @@ class Game
     public function __construct(string $mode, array $players, int $mapId)
     {
         $this->mode = $mode;
+        $this->mapId = $mapId;
         $this->teamAmount = GameUtils::$config->getNested("mode.$mode.team_amount");
         $this->teamSize = GameUtils::$config->getNested("mode.$mode.team_size");
         $this->players = $players;
@@ -70,7 +72,7 @@ class Game
 
     private function setupWorld($worldName): void
     {
-        $game_world_name = "bw1v1-" . time();
+        $game_world_name = $this->mode . time();
         $game_world_name_empty = $game_world_name . "-empty";
         WorldUtils::duplicateWorld($worldName, $game_world_name);
         WorldUtils::duplicateWorld($worldName, $game_world_name_empty);
@@ -83,12 +85,12 @@ class Game
 
     private function setupShops(): void
     {
-        $teams = array_keys(GameUtils::$config->getNested("mode.$this->mode.team"));
+        $teams = array_keys(GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team"));
 
         foreach ($teams as $team) {
-            $x = GameUtils::$config->getNested("mode.$this->mode.team.$team.shop.x");
-            $y = GameUtils::$config->getNested("mode.$this->mode.team.$team.shop.y");
-            $z = GameUtils::$config->getNested("mode.$this->mode.team.$team.shop.z");
+            $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.shop.x");
+            $y = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.shop.y");
+            $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.shop.z");
             $shop = new ShopVillager(new Location($x, $y, $z, $this->world, 0, 0));
             $this->spawnEntity($shop);
             $this->shops[] = $shop;
@@ -110,29 +112,29 @@ class Game
     private function setupGenerators(): void
     {
         // team gens
-        $teams = array_keys(GameUtils::$config->getNested("mode.$this->mode.team"));
+        $teams = array_keys(GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team"));
         foreach ($teams as $team) {
-            $x = GameUtils::$config->getNested("mode.$this->mode.team.$team.gen.x");
-            $y = GameUtils::$config->getNested("mode.$this->mode.team.$team.gen.y");
-            $z = GameUtils::$config->getNested("mode.$this->mode.team.$team.gen.z");
+            $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.gen.x");
+            $y = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.gen.y");
+            $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.gen.z");
             $this->teamGens[] = new GeneratorTask(VanillaItems::COPPER_INGOT(), 1, new Position($x, $y, $z, $this->world));
         }
 
         // iron gens
-        $iron_gens = array_keys(GameUtils::$config->getNested("mode.$this->mode.gen.iron"));
+        $iron_gens = array_keys(GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.iron"));
         foreach ($iron_gens as $gen) {
-            $x = GameUtils::$config->getNested("mode.$this->mode.gen.iron.$gen.x");
-            $y = GameUtils::$config->getNested("mode.$this->mode.gen.iron.$gen.y");
-            $z = GameUtils::$config->getNested("mode.$this->mode.gen.iron.$gen.z");
+            $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.iron.$gen.x");
+            $y = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.iron.$gen.y");
+            $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.iron.$gen.z");
             $this->ironGens[] = new GeneratorTask(VanillaItems::IRON_INGOT(), 10, new Position($x, $y, $z, $this->world));
         }
 
         // gold gens
-        $gold_gens = array_keys(GameUtils::$config->getNested("mode.$this->mode.gen.gold"));
+        $gold_gens = array_keys(GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.gold"));
         foreach ($gold_gens as $gen) {
-            $x = GameUtils::$config->getNested("mode.$this->mode.gen.gold.$gen.x");
-            $y = GameUtils::$config->getNested("mode.$this->mode.gen.gold.$gen.y");
-            $z = GameUtils::$config->getNested("mode.$this->mode.gen.gold.$gen.z");
+            $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.gold.$gen.x");
+            $y = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.gold.$gen.y");
+            $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.gold.$gen.z");
             $this->goldGens[] = new GeneratorTask(VanillaItems::GOLD_INGOT(), 10, new Position($x, $y, $z, $this->world));
         }
     }
@@ -153,9 +155,9 @@ class Game
 
         foreach ($this->teams as $team) {
             $teamId = $team->getId();
-            $x = GameUtils::$config->getNested("mode.$this->mode.team.$teamId.spawn.x");
-            $y = GameUtils::$config->getNested("mode.$this->mode.team.$teamId.spawn.y");
-            $z = GameUtils::$config->getNested("mode.$this->mode.team.$teamId.spawn.z");
+            $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$teamId.spawn.x");
+            $y = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$teamId.spawn.y");
+            $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$teamId.spawn.z");
             $this->teamSpawns[$teamId] = new Position($x, $y, $z, $this->world);
             foreach ($team->getPlayers() as $playerIndex => $player) {
                 $player->getInventory()->clearAll();
@@ -259,7 +261,7 @@ class Game
 
     public function checkForWinner(): void
     {
-        if (count($this->teams) < 2) {
+        if (count($this->teams) == 1) {
             $winner = $this->teams[0];
             $winner->broadcastTitle(TextFormat::GOLD . TextFormat::BOLD . "Victory!");
 

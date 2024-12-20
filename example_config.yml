@@ -5,11 +5,11 @@ mode: # any key in mode is a gamemode (/bw join [key])
     team_size: 1
     team_amount: 2
     min_req_players: 1
-    map: # keys for maps
+    map: # keys for maps, has to be int
       0: # map requires name and world, team and gen
         name: Stone
         world: bwmap-stone
-        team: # keys for teams
+        team: # keys for teams, has to be int
           0: # requires spawn gen and shop
             spawn:
               x: 0
