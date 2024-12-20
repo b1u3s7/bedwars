@@ -1,0 +1,17 @@
+name: Bedwars
+main: b1u3s7\bedwars\Bedwars
+version: 1.0
+api: 5.0.0
+
+load: POSTWORLD
+author: b1u3s7
+description: Bedwars stuff
+
+
+permissions:
+  bedwars.command:
+    description: Permission nested for /bedwars
+    default: true
+  bedwars.command.join:
+    description: Permission for /bedwars join
+    default: true
