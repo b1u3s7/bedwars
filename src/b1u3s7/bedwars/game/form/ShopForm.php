@@ -3,6 +3,7 @@
 namespace b1u3s7\bedwars\game\form;
 
 use b1u3s7\bedwars\game\entity\FireballItem;
+use b1u3s7\bedwars\game\item\RescuePlatform;
 use b1u3s7\bedwars\game\utils\ShopHelper;
 use b1u3s7\bedwars\utils\TeamAsColor;
 use jojoe77777\FormAPI\SimpleForm;
@@ -31,6 +32,7 @@ class ShopForm extends SimpleForm
         $this->addButton("Iron Sword");
         $this->addButton("Fireball");
         $this->addButton("TNT");
+        $this->addButton("Rescue Platform");
     }
 
     public function handleResponse(Player $player, $data): void
@@ -60,6 +62,8 @@ class ShopForm extends SimpleForm
             case 7:
                 ShopHelper::buyItem($player, VanillaBlocks::TNT()->asItem(), VanillaItems::GOLD_INGOT()->setCount(1));
                 break;
+            case 8:
+                ShopHelper::buyItem($player, new RescuePlatform(), VanillaItems::GOLD_INGOT()->setCount(1));
         }
     }
 }

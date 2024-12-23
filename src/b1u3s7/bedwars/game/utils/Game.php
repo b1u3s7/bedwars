@@ -406,6 +406,7 @@ class Game
         if (in_array($player, $this->players)) {
             $team = $this->getTeamByPlayer($player);
             $respawn_task = new RespawnTask($player, $this->teamSpawns[$team->getId()]);
+            $player->setHealth($player->getMaxHealth());
             Bedwars::getInstance()->getScheduler()->scheduleRepeatingTask($respawn_task, 20);
         }
     }
