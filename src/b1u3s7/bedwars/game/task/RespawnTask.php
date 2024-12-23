@@ -20,17 +20,14 @@ class RespawnTask extends Task
     {
         $this->player = $player;
         $this->respawnPos = $respawnPos;
+        $this->player->getEffects()->add(new EffectInstance(VanillaEffects::BLINDNESS(), duration: 200, visible: false));
     }
 
     public function onRun(): void
     {
         $this->player->sendTitle($this->counter, "", 0, 10, 0);
 
-        if ($this->counter == 3) {
-            $this->player->getEffects()->add(new EffectInstance(VanillaEffects::BLINDNESS(), duration: 200, visible: false));
-        }
-
-        if ($this->counter == 0) {
+        if ($this->counter <= 0) {
             $this->player->getEffects()->remove(VanillaEffects::BLINDNESS());
             $this->player->setGamemode(GameMode::SURVIVAL);
             $this->player->teleport($this->respawnPos);

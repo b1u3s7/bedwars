@@ -5,10 +5,7 @@ namespace b1u3s7\bedwars\game\form;
 use b1u3s7\bedwars\game\utils\ShopHelper;
 use b1u3s7\bedwars\utils\TeamAsColor;
 use jojoe77777\FormAPI\SimpleForm;
-use pocketmine\block\Copper;
-use pocketmine\block\utils\DyeColor;
 use pocketmine\block\VanillaBlocks;
-use pocketmine\block\Wool;
 use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
 

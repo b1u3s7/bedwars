@@ -7,11 +7,12 @@ use b1u3s7\bedwars\game\entity\ShopVillager;
 use b1u3s7\bedwars\game\GameManager;
 use b1u3s7\bedwars\game\task\GameEndTask;
 use b1u3s7\bedwars\game\task\GameProgressionTask;
-use b1u3s7\bedwars\game\task\GeneratorTask;
+use b1u3s7\bedwars\game\task\GameTickTask;
 use b1u3s7\bedwars\game\task\RespawnTask;
 use b1u3s7\bedwars\utils\BedIds;
 use b1u3s7\bedwars\utils\TeamColors;
 use b1u3s7\bedwars\utils\WorldUtils;
+use b1u3s7\bedwars\game\ItemGenerator;
 use OverflowException;
 use pocketmine\block\Bed;
 use pocketmine\data\bedrock\EffectIds;
@@ -52,7 +53,7 @@ class Game
     private array $goldGens = [];
     private array $beds = [];
     private array $teamSpawns = [];
-    private TaskHandler $progressionTask;
+    private TaskHandler $tickTask;
 
     public function __construct(string $mode, array $players, int $mapId)
     {
@@ -65,7 +66,7 @@ class Game
         $this->setupWorld(GameUtils::$config->getNested("mode.$mode.map.$mapId.world"));
         $this->setupShops();
         $this->setupGenerators();
-        $this->progressionTask = Bedwars::getInstance()->getScheduler()->scheduleRepeatingTask(new GameProgressionTask($this), 20);
+        $this->tickTask = Bedwars::getInstance()->getScheduler()->scheduleRepeatingTask(new GameTickTask($this), 1);
 
         $this->prepPlayers();
     }
@@ -117,7 +118,7 @@ class Game
             $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.gen.x");
             $y = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.gen.y");
             $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.gen.z");
-            $this->teamGens[] = new GeneratorTask(VanillaItems::COPPER_INGOT(), 1, new Position($x, $y, $z, $this->world));
+            $this->teamGens[] = new ItemGenerator(new Position($x, $y, $z, $this->world), VanillaItems::COPPER_INGOT());
         }
 
         // iron gens
@@ -126,7 +127,7 @@ class Game
             $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.iron.$gen.x");
             $y = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.iron.$gen.y");
             $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.iron.$gen.z");
-            $this->ironGens[] = new GeneratorTask(VanillaItems::IRON_INGOT(), 10, new Position($x, $y, $z, $this->world));
+            $this->ironGens[] = new ItemGenerator(new Position($x, $y, $z, $this->world), VanillaItems::IRON_INGOT());
         }
 
         // gold gens
@@ -135,8 +136,13 @@ class Game
             $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.gold.$gen.x");
             $y = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.gold.$gen.y");
             $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".gen.gold.$gen.z");
-            $this->goldGens[] = new GeneratorTask(VanillaItems::GOLD_INGOT(), 10, new Position($x, $y, $z, $this->world));
+            $this->goldGens[] = new ItemGenerator(new Position($x, $y, $z, $this->world), VanillaItems::GOLD_INGOT());
         }
+    }
+
+    public function getTeamGenerators(): array
+    {
+        return $this->teamGens;
     }
 
     public function getIronGenerators(): array
@@ -287,19 +293,7 @@ class Game
             }
         }
 
-        $this->progressionTask->cancel();
-
-        foreach ($this->teamGens as $gen) {
-            $gen->cancel();
-        }
-
-        foreach ($this->ironGens as $gen) {
-            $gen->cancel();
-        }
-
-        foreach ($this->goldGens as $gen) {
-            $gen->cancel();
-        }
+        $this->tickTask->cancel();
 
         Bedwars::getInstance()->getScheduler()->scheduleRepeatingTask(new GameEndTask($this), 20);
     }

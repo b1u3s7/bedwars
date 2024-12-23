@@ -21,6 +21,8 @@ class Queue
         $this->requiredPlayer = GameUtils::$config->getNested("mode.$mode.min_req_players");
         $this->modeName = GameUtils::$config->getNested("mode.$mode.name");
         $this->mapId = array_rand(GameUtils::$config->getNested("mode.$mode.map"));
+
+        $this->maximumPlayers = 1;
     }
 
     public function getMode(): string
