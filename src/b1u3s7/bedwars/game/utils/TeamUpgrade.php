@@ -2,51 +2,40 @@
 
 namespace b1u3s7\bedwars\game\utils;
 
-use pocketmine\item\Item;
 
-class Upgrade
+class TeamUpgrade
 {
-    private string $name;
-    private Item $price;
-    /**
-     * @var callable
-     */
-    private $callback;
+    private Upgrade $upgrade;
+    private int $tier;
 
-    public function __construct(string $name, Item $price, callable $callback)
+    public function __construct(Upgrade $upgrade)
     {
-        $this->name = $name;
-        $this->price = $price;
-        $this->callback = $callback;
+        $this->upgrade = $upgrade;
+        $this->tier = 0;
     }
 
-    public function getName(): string
+    public function getUpgrade(): Upgrade
     {
-        return $this->name;
+        return $this->upgrade;
     }
 
-    public function setName(string $name): void
+    public function setUpgrade(Upgrade $upgrade): void
     {
-        $this->name = $name;
+        $this->upgrade = $upgrade;
     }
 
-    public function getPrice(): Item
+    public function getTier(): int
     {
-        return $this->price;
+        return $this->tier;
     }
 
-    public function setPrice(Item $price): void
+    public function increaseTier(): void
     {
-        $this->price = $price;
+        $this->tier++;
     }
 
-    public function getCallback(): callable
+    public function setTier(int $tier): void
     {
-        return $this->callback;
-    }
-
-    public function setCallback(callable $callback): void
-    {
-        $this->callback = $callback;
+        $this->tier = $tier;
     }
 }

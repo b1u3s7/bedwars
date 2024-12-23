@@ -20,7 +20,7 @@ class ShopForm extends SimpleForm
         $this->teamId = $teamId;
         parent::__construct([$this, "handleResponse"]);
 
-        $this->setTitle("Shop");
+        $this->setTitle("Item Shop");
 
         $this->addButton("Wool");
         $this->addButton("Wood");

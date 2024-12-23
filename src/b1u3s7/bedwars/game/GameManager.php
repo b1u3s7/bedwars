@@ -32,19 +32,6 @@ class GameManager
         return null;
     }
 
-    public static function getTeamByPlayer(Player $player): ?Team
-    {
-        $game = self::getGameByPlayer($player);
-        if ($game !== null) {
-            foreach ($game->getTeams() as $team) {
-                if (in_array($player, $team->getPlayers())) {
-                    return $team;
-                }
-            }
-        }
-        return null;
-    }
-
     public static function getQueueByPlayer(Player $player): ?Queue
     {
         foreach (self::$queues as $queue) {

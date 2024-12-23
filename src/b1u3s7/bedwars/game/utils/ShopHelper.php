@@ -26,4 +26,19 @@ class ShopHelper
             $player->sendMessage("Too few resources to purchase item!");
         }
     }
+
+    public static function removeItems(Player $player, Item $price): void
+    {
+        $inv = $player->getInventory();
+        $amount = 0;
+
+        foreach ($inv->getContents() as $slot => $item) {
+            if ($item->getTypeId() === $price->getTypeId()) {
+                $amount += $item->getCount();
+            }
+        }
+
+        $inv->remove($price);
+        $inv->addItem($price->setCount($amount - $price->getCount()));
+    }
 }

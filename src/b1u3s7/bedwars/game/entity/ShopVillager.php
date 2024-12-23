@@ -23,7 +23,7 @@ class ShopVillager extends Entity
     {
         parent::initEntity($nbt);
 
-        $this->setNameTag("Shop");
+        $this->setNameTag("Item Shop");
         $this->setNameTagAlwaysVisible();
     }
 
@@ -56,7 +56,7 @@ class ShopVillager extends Entity
             if ($damager instanceof Player) {
                 if (GameManager::getGameByPlayer($damager) != null && $damager->getGamemode() == GameMode::SURVIVAL)
                 {
-                    $damager->sendForm(new ShopForm(GameManager::getTeamByPlayer($damager)->getId()));
+                    $damager->sendForm(new ShopForm(GameManager::getGameByPlayer($damager)->getTeamByPlayer($damager)->getId()));
                 }
             }
         }

@@ -21,6 +21,9 @@ use pocketmine\event\player\PlayerBedEnterEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\item\enchantment\EnchantmentInstance;
+use pocketmine\item\enchantment\VanillaEnchantments;
+use pocketmine\item\Item;
 use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\network\mcpe\protocol\types\BoolGameRule;
 use pocketmine\player\Player;
@@ -35,7 +38,7 @@ class GameListener implements Listener
         $game = GameManager::getGameByPlayer($player);
         if ($game != null) {
             if ($block instanceof Bed) {
-                if (GameManager::getTeamByPlayer($player)->getId() == BedIds::getId($block->getColor()->name)) {
+                if ($game->getTeamByPlayer($player)->getId() == BedIds::getId($block->getColor()->name)) {
                     $event->cancel();
                     $player->sendMessage("You can not break your own bed!");
                     return;
@@ -98,7 +101,7 @@ class GameListener implements Listener
         $entity = $event->getEntity();
 
         if ($attacker instanceof Player && $entity instanceof Player) {
-            $attackerTeam = GameManager::getTeamByPlayer($attacker);
+            $attackerTeam = GameManager::getGameByPlayer($attacker)->getTeamByPlayer($attacker);
             if ($attackerTeam != null) {
                 if (in_array($entity, $attackerTeam->getPlayers())) {
                     $event->cancel();

@@ -4,9 +4,11 @@ namespace b1u3s7\bedwars;
 
 use b1u3s7\bedwars\command\BedwarsCommand;
 use b1u3s7\bedwars\game\entity\ShopVillager;
+use b1u3s7\bedwars\game\entity\UpgradeVillager;
 use b1u3s7\bedwars\game\GameManager;
 use b1u3s7\bedwars\game\listener\GameListener;
 use b1u3s7\bedwars\game\utils\GameUtils;
+use b1u3s7\bedwars\game\utils\TeamUpgradeFunctions;
 use b1u3s7\bedwars\utils\WorldUtils;
 use pocketmine\entity\EntityDataHelper;
 use pocketmine\entity\EntityFactory;
@@ -34,6 +36,10 @@ class Bedwars extends PluginBase
         EntityFactory::getInstance()->register(ShopVillager::class, function (World $world, CompoundTag $nbt): ShopVillager {
             return new ShopVillager(EntityDataHelper::parseLocation($nbt, $world), $nbt);
         }, ['ShopVillager']);
+
+        EntityFactory::getInstance()->register(UpgradeVillager::class, function (World $world, CompoundTag $nbt): UpgradeVillager {
+            return new UpgradeVillager(EntityDataHelper::parseLocation($nbt, $world), $nbt);
+        }, ['UpgradeVillager']);
 
         $commands = [
             "bedwars" => new BedwarsCommand($this, "bedwars", "Bedwars commands", ["bw"]),

@@ -4,32 +4,23 @@ namespace b1u3s7\bedwars\game\utils;
 
 use b1u3s7\bedwars\Bedwars;
 use b1u3s7\bedwars\game\entity\ShopVillager;
+use b1u3s7\bedwars\game\entity\UpgradeVillager;
 use b1u3s7\bedwars\game\GameManager;
 use b1u3s7\bedwars\game\task\GameEndTask;
-use b1u3s7\bedwars\game\task\GameProgressionTask;
 use b1u3s7\bedwars\game\task\GameTickTask;
 use b1u3s7\bedwars\game\task\RespawnTask;
 use b1u3s7\bedwars\utils\BedIds;
+use b1u3s7\bedwars\utils\TeamAsColor;
 use b1u3s7\bedwars\utils\TeamColors;
 use b1u3s7\bedwars\utils\WorldUtils;
 use b1u3s7\bedwars\game\ItemGenerator;
 use OverflowException;
 use pocketmine\block\Bed;
-use pocketmine\data\bedrock\EffectIds;
-use pocketmine\entity\effect\Effect;
-use pocketmine\entity\effect\EffectInstance;
-use pocketmine\entity\effect\EffectManager;
-use pocketmine\entity\effect\StringToEffectParser;
-use pocketmine\entity\effect\VanillaEffects;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Location;
-use pocketmine\item\Item;
-use pocketmine\item\ItemIdentifier;
-use pocketmine\item\ItemTypeIds;
 use pocketmine\item\VanillaItems;
 use pocketmine\player\GameMode;
 use pocketmine\player\Player;
-use pocketmine\scheduler\Task;
 use pocketmine\scheduler\TaskHandler;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
@@ -53,7 +44,10 @@ class Game
     private array $goldGens = [];
     private array $beds = [];
     private array $teamSpawns = [];
-    private TaskHandler $tickTask;
+    private array $teamUpgrades = [];
+    private GameTickTask $tickTask;
+    private TeamUpgradeManager $teamUpgradeManager;
+    private TaskHandler $tickTaskManager;
 
     public function __construct(string $mode, array $players, int $mapId)
     {
@@ -63,10 +57,18 @@ class Game
         $this->teamSize = GameUtils::$config->getNested("mode.$mode.team_size");
         $this->players = $players;
 
+        $this->teams = $this->distributePlayersIntoTeams($this->players, $this->teamAmount, $this->teamSize);
+
         $this->setupWorld(GameUtils::$config->getNested("mode.$mode.map.$mapId.world"));
         $this->setupShops();
         $this->setupGenerators();
-        $this->tickTask = Bedwars::getInstance()->getScheduler()->scheduleRepeatingTask(new GameTickTask($this), 1);
+        $this->tickTask = new GameTickTask($this);
+        $this->tickTaskManager = Bedwars::getInstance()->getScheduler()->scheduleRepeatingTask($this->tickTask, 1);
+
+        $this->teamUpgradeManager = new TeamUpgradeManager($this);
+        $this->teamUpgradeManager->addUpgrade("Protection", 4, [VanillaItems::IRON_INGOT()->setCount(2), VanillaItems::IRON_INGOT()->setCount(4), VanillaItems::IRON_INGOT()->setCount(8), VanillaItems::IRON_INGOT()->setCount(16)], [TeamUpgradeFunctions::class, 'protectionUpgrade']);
+        $this->teamUpgradeManager->addUpgrade("Haste", 2, [VanillaItems::IRON_INGOT()->setCount(2), VanillaItems::IRON_INGOT()->setCount(4)], [TeamUpgradeFunctions::class, 'hasteUpgrade']);
+        $this->teamUpgradeManager->addUpgrade("Generator", 2, [VanillaItems::IRON_INGOT()->setCount(2), VanillaItems::IRON_INGOT()->setCount(4)], [TeamUpgradeFunctions::class, 'forgeUpgrade']);
 
         $this->prepPlayers();
     }
@@ -95,6 +97,13 @@ class Game
             $shop = new ShopVillager(new Location($x, $y, $z, $this->world, 0, 0));
             $this->spawnEntity($shop);
             $this->shops[] = $shop;
+
+            $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.upgrade.x");
+            $y = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.upgrade.y");
+            $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$team.upgrade.z");
+            $upgrade = new UpgradeVillager(new Location($x, $y, $z, $this->world, 0, 0));
+            $this->spawnEntity($upgrade);
+            $this->shops[] = $upgrade;
         }
     }
 
@@ -140,6 +149,11 @@ class Game
         }
     }
 
+    public function getTickTask(): GameTickTask
+    {
+        return $this->tickTask;
+    }
+
     public function getTeamGenerators(): array
     {
         return $this->teamGens;
@@ -155,10 +169,13 @@ class Game
         return $this->goldGens;
     }
 
+    public function getTeamUpgradeManager(): TeamUpgradeManager
+    {
+        return $this->teamUpgradeManager;
+    }
+
     private function prepPlayers(): void
     {
-        $this->teams = $this->distributePlayersIntoTeams($this->players, $this->teamAmount, $this->teamSize);
-
         foreach ($this->teams as $team) {
             $teamId = $team->getId();
             $x = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$teamId.spawn.x");
@@ -167,6 +184,16 @@ class Game
             $this->teamSpawns[$teamId] = new Position($x, $y, $z, $this->world);
             foreach ($team->getPlayers() as $playerIndex => $player) {
                 $player->getInventory()->clearAll();
+                $player->getArmorInventory()->clearAll();
+
+                $color = TeamAsColor::getColor($teamId)->getRgbValue();
+
+                $armor = $player->getArmorInventory();
+                $armor->setBoots(VanillaItems::LEATHER_BOOTS()->setCustomColor($color));
+                $armor->setLeggings(VanillaItems::LEATHER_PANTS()->setCustomColor($color));
+                $armor->setChestplate(VanillaItems::LEATHER_TUNIC()->setCustomColor($color));
+                $armor->setHelmet(VanillaItems::LEATHER_CAP()->setCustomColor($color));
+
                 $player->setNameTag(TeamColors::getColor($teamId) . $player->getNameTag() . TextFormat::RESET);
                 $player->teleport(new Position($x, $y, $z, $this->world));
                 $player->setGamemode(GameMode::SURVIVAL);
@@ -220,6 +247,16 @@ class Game
         return null;
     }
 
+    public function getTeamByPlayer(Player $player): ?Team
+    {
+        foreach ($this->getTeams() as $team) {
+            if (in_array($player, $team->getPlayers())) {
+                return $team;
+            }
+        }
+        return null;
+    }
+
     public function killPlayer(Player $player): void
     {
         if (in_array($player, $this->players)) {
@@ -229,7 +266,7 @@ class Game
                 $this->respawnPlayer($player);
             } else {
                 $player->sendTitle("Eliminated");
-                $team = GameManager::getTeamByPlayer($player);
+                $team = $this->getTeamByPlayer($player);
                 if ($team !== null) {
                     $team->removePlayer($player);
                     $this->broadcastMessage($player->getNameTag() . " was eliminated.");
@@ -290,10 +327,12 @@ class Game
             foreach ($team->getPlayers() as $player) {
                 $player->setGamemode(GameMode::SPECTATOR);
                 $player->getInventory()->clearAll();
+                $player->getArmorInventory()->clearAll();
+                $player->getEffects()->clear();
             }
         }
 
-        $this->tickTask->cancel();
+        $this->tickTaskManager->cancel();
 
         Bedwars::getInstance()->getScheduler()->scheduleRepeatingTask(new GameEndTask($this), 20);
     }
@@ -301,7 +340,7 @@ class Game
     public function canPlayerRespawn(Player $player): bool
     {
         if (in_array($player, $this->players)) {
-            $team = GameManager::getTeamByPlayer($player);
+            $team = $this->getTeamByPlayer($player);
             if ($this->beds[$team->getId()]) {
                 return true;
             }
@@ -312,7 +351,7 @@ class Game
     public function respawnPlayer(Player $player): void
     {
         if (in_array($player, $this->players)) {
-            $team = GameManager::getTeamByPlayer($player);
+            $team = $this->getTeamByPlayer($player);
             $respawn_task = new RespawnTask($player, $this->teamSpawns[$team->getId()]);
             Bedwars::getInstance()->getScheduler()->scheduleRepeatingTask($respawn_task, 20);
         }
@@ -320,7 +359,7 @@ class Game
 
     public function removePlayer(Player $player): void
     {
-        $team = GameManager::getTeamByPlayer($player);
+        $team = $this->getTeamByPlayer($player);
 
         if ($team !== null) {
             if (in_array($team, $this->teams)) {
