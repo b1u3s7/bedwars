@@ -2,6 +2,7 @@
 
 namespace b1u3s7\bedwars\game\form;
 
+use b1u3s7\bedwars\game\entity\FireballItem;
 use b1u3s7\bedwars\game\utils\ShopHelper;
 use b1u3s7\bedwars\utils\TeamAsColor;
 use jojoe77777\FormAPI\SimpleForm;
@@ -28,12 +29,8 @@ class ShopForm extends SimpleForm
         $this->addButton("Wooden Sword");
         $this->addButton("Stone Sword");
         $this->addButton("Iron Sword");
-        $this->addButton("Wooden Pickaxe");
-        $this->addButton("Stone Pickaxe");
-        $this->addButton("Iron Pickaxe");
-        $this->addButton("Wooden Axe");
-        $this->addButton("Stone Axe");
-        $this->addButton("Iron Axe");
+        $this->addButton("Fireball");
+        $this->addButton("TNT");
     }
 
     public function handleResponse(Player $player, $data): void
@@ -58,22 +55,10 @@ class ShopForm extends SimpleForm
                 ShopHelper::buyItem($player, VanillaItems::IRON_SWORD(), VanillaItems::GOLD_INGOT()->setCount(4));
                 break;
             case 6:
-                ShopHelper::buyItem($player, VanillaItems::WOODEN_PICKAXE(), VanillaItems::COPPER_INGOT()->setCount(4));
+                ShopHelper::buyItem($player, new FireballItem(), VanillaItems::GOLD_INGOT()->setCount(1));
                 break;
             case 7:
-                ShopHelper::buyItem($player, VanillaItems::STONE_PICKAXE(), VanillaItems::IRON_INGOT()->setCount(4));
-                break;
-            case 8:
-                ShopHelper::buyItem($player, VanillaItems::IRON_PICKAXE(), VanillaItems::GOLD_INGOT()->setCount(4));
-                break;
-            case 9:
-                ShopHelper::buyItem($player, VanillaItems::WOODEN_AXE(), VanillaItems::COPPER_INGOT()->setCount(4));
-                break;
-            case 10:
-                ShopHelper::buyItem($player, VanillaItems::STONE_AXE(), VanillaItems::IRON_INGOT()->setCount(4));
-                break;
-            case 11:
-                ShopHelper::buyItem($player, VanillaItems::IRON_AXE(), VanillaItems::GOLD_INGOT()->setCount(4));
+                ShopHelper::buyItem($player, VanillaBlocks::TNT()->asItem(), VanillaItems::GOLD_INGOT()->setCount(1));
                 break;
         }
     }

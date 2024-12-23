@@ -16,13 +16,16 @@ use pocketmine\block\TNT;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\block\Wool;
 use pocketmine\entity\Entity;
+use pocketmine\entity\EntityFactory;
 use pocketmine\entity\Location;
 use pocketmine\entity\object\PrimedTNT;
+use pocketmine\entity\Villager;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
+use pocketmine\event\entity\EntityMotionEvent;
 use pocketmine\event\entity\EntityPreExplodeEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerBedEnterEvent;
@@ -35,6 +38,7 @@ use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\network\mcpe\protocol\types\BoolGameRule;
+use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\utils\TextFormat;
@@ -77,8 +81,10 @@ class GameListener implements Listener
                 if ($block instanceof TNT) {
                     $position = $block->getPosition();
                     $world = $position->getWorld();
-                    $world->setBlock($position, VanillaBlocks::AIR());
-                    $world->addEntity(new PrimedTNT(new Location($position->x, $position->y, $position->z, $world, 0 ,0)));
+                    $primedTNT = new PrimedTNT(new Location($position->getX() + 0.5, $position->getY() + 0.5, $position->getZ() + 0.5, $world, 0, 0));
+                    $primedTNT->setFuse(50);
+                    $primedTNT->spawnToAll();
+                    $event->getTransaction()->addBlockAt($position->getX(), $position->getY(), $position->getZ(), VanillaBlocks::AIR());
                 } else if ($game->isPositionInProtectedArea($block->getPosition())) {
                     $event->cancel();
                     $event->getPlayer()->sendMessage(TextFormat::RED . "You can not place blocks in this area!" . TextFormat::RESET);
@@ -152,15 +158,20 @@ class GameListener implements Listener
         }
     }
 
+    public function onEntityMove(EntityMotionEvent $event): void
+    {
+        $event->cancel();
+    }
+
     public function onEntityDamageByEntity(EntityDamageByEntityEvent $event): void
     {
-        $attacker = $event->getDamager();
+        $damager = $event->getDamager();
         $entity = $event->getEntity();
 
-        if ($attacker instanceof Player && $entity instanceof Player) {
-            $game = GameManager::getGameByPlayer($attacker);
+        if ($damager instanceof Player && $entity instanceof Player) {
+            $game = GameManager::getGameByPlayer($damager);
             if ($game != null) {
-                $attackerTeam = $game->getTeamByPlayer($attacker);
+                $attackerTeam = $game->getTeamByPlayer($damager);
                 if ($attackerTeam != null) {
                     if (in_array($entity, $attackerTeam->getPlayers())) {
                         $event->cancel();
@@ -172,8 +183,15 @@ class GameListener implements Listener
 
     public function onExplosion(EntityExplodeEvent $event): void
     {
-        Server::getInstance()->broadcastMessage($event->getEntity()->getId() . " exploded");
-        $event->setBlockList([VanillaBlocks::WOOL(), VanillaBlocks::OAK_PLANKS(), VanillaBlocks::END_STONE()]);
+        $blockList = [];
+        foreach ($event->getBlockList() as $block) {
+            if (!$block instanceof Wool && !$block instanceof Planks && $block->getTypeId() != VanillaBlocks::END_STONE()->getTypeId()) {
+                continue;
+            }
+            $blockList[] = $block;
+        }
+        $event->setBlockList($blockList);
+        $event->setYield(0);
     }
 
     public function onEntityDamage(EntityDamageEvent $event): void
