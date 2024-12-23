@@ -45,11 +45,13 @@ class Game
     private array $goldGens = [];
     private array $beds = [];
     private array $teamSpawns = [];
-    private array $teamUpgrades = [];
     private GameTickTask $tickTask;
     private TeamUpgradeManager $teamUpgradeManager;
     private TaskHandler $tickTaskManager;
-    private $spawnBlockProtectionRadius;
+    private int $spawnBlockProtectionRadius;
+    private int $trapTriggerRadius;
+    private array $traps;
+    private int $maxTraps = 1; // maximum traps for a team
 
     public function __construct(string $mode, array $players, int $mapId)
     {
@@ -59,7 +61,7 @@ class Game
         $this->teamSize = GameUtils::$config->getNested("mode.$mode.team_size");
         $this->players = $players;
         $this->spawnBlockProtectionRadius = GameUtils::$config->getNested("mode." . $this->mode . ".map." . $this->mapId . ".spawn_block_protection_radius");
-
+        $this->trapTriggerRadius = GameUtils::$config->getNested("mode." . $this->mode . ".map." . $this->mapId . ".trap_trigger_radius");
 
         $this->teams = $this->distributePlayersIntoTeams($this->players, $this->teamAmount, $this->teamSize);
 
@@ -174,6 +176,11 @@ class Game
         return $this->teamUpgradeManager;
     }
 
+    public function getTrapTriggerRadius(): int
+    {
+        return $this->trapTriggerRadius;
+    }
+
     private function prepPlayers(): void
     {
         foreach ($this->teams as $team) {
@@ -199,6 +206,7 @@ class Game
                 $player->setGamemode(GameMode::SURVIVAL);
             }
             $this->beds[$teamId] = true;
+            $this->traps[$teamId] = [];
         }
     }
 
@@ -218,7 +226,7 @@ class Game
 
             if (count($currentTeam->getPlayers()) >= $teamSize) {
                 $teamIndex++;
-                if ($teamIndex >= $maxTeams) {
+                if ($teamIndex > $maxTeams) {
                     throw new OverflowException("Not enough teams to accommodate all players.");
                 }
             }
@@ -301,6 +309,26 @@ class Game
             }
         }
         return false;
+    }
+
+    public function getTrapsFromTeam(int $teamId): array
+    {
+        return $this->traps[$teamId];
+    }
+
+    public function canTeamAddTrap(int $teamId): bool
+    {
+        return count($this->getTrapsFromTeam($teamId)) < $this->maxTraps;
+    }
+
+    public function addTrap(int $teamId, int $trapId): void
+    {
+        $this->traps[$teamId][] = new Trap($this, $trapId);
+    }
+
+    public function removeTrap(int $teamId): void
+    {
+        array_shift($this->traps[$teamId]);
     }
 
     public function bedBroken(Bed $bed, Player $player): void

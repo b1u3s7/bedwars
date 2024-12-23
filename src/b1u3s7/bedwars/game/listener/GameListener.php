@@ -5,18 +5,25 @@ namespace b1u3s7\bedwars\game\listener;
 use b1u3s7\bedwars\game\GameManager;
 use b1u3s7\bedwars\game\utils\GameUtils;
 use b1u3s7\bedwars\utils\BedIds;
+use b1u3s7\bedwars\utils\Utils;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
 use pocketmine\block\BlockIdentifier;
 use pocketmine\block\BlockTypeIds;
 use pocketmine\block\Planks;
 use pocketmine\block\RuntimeBlockStateRegistry;
+use pocketmine\block\TNT;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\block\Wool;
+use pocketmine\entity\Entity;
+use pocketmine\entity\Location;
+use pocketmine\entity\object\PrimedTNT;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
+use pocketmine\event\entity\EntityExplodeEvent;
+use pocketmine\event\entity\EntityPreExplodeEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerBedEnterEvent;
 use pocketmine\event\player\PlayerJoinEvent;
@@ -25,9 +32,11 @@ use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\enchantment\VanillaEnchantments;
 use pocketmine\item\Item;
+use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\network\mcpe\protocol\types\BoolGameRule;
 use pocketmine\player\Player;
+use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 
 class GameListener implements Listener
@@ -64,8 +73,13 @@ class GameListener implements Listener
         $game = GameManager::getGameByPlayer($player);
 
         if ($game != null) {
-            foreach($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
-                if ($game->isPositionInProtectedArea($block->getPosition())) {
+            foreach ($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
+                if ($block instanceof TNT) {
+                    $position = $block->getPosition();
+                    $world = $position->getWorld();
+                    $world->setBlock($position, VanillaBlocks::AIR());
+                    $world->addEntity(new PrimedTNT(new Location($position->x, $position->y, $position->z, $world, 0 ,0)));
+                } else if ($game->isPositionInProtectedArea($block->getPosition())) {
                     $event->cancel();
                     $event->getPlayer()->sendMessage(TextFormat::RED . "You can not place blocks in this area!" . TextFormat::RESET);
                 }
@@ -107,10 +121,33 @@ class GameListener implements Listener
     public function onPlayerMove(PlayerMoveEvent $event): void
     {
         $player = $event->getPlayer();
-        if ($player->getPosition()->getY() <= 10) {
-            $game = GameManager::getGameByPlayer($player);
-            if ($game != null) {
-                $game->killPlayer($player);
+        $game = GameManager::getGameByPlayer($player);
+
+        if ($game != null) {
+            $team = $game->getTeamByPlayer($player);
+            if ($team != null) {
+                $teamId = $team->getId();
+                $position = $player->getPosition();
+
+                // if player in void
+                if ($position->getY() <= 10) {
+                    $game = GameManager::getGameByPlayer($player);
+                    $game?->killPlayer($player);
+                }
+
+                // traps trigger
+                $teamSpawns = $game->getTeamSpawns();
+                foreach (array_keys($teamSpawns) as $key) {
+                    if (!$key == $team->getId()) {
+                        if (Utils::isPositionInArea($position, $teamSpawns[$key], $game->getTrapTriggerRadius())) {
+                            $traps = $game->getTrapsFromTeam($key);
+                            if (count($traps) > 0) {
+                                $trap = $traps[0];
+                                $trap->trigger($player, $game->getTeamById($key));
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -121,13 +158,22 @@ class GameListener implements Listener
         $entity = $event->getEntity();
 
         if ($attacker instanceof Player && $entity instanceof Player) {
-            $attackerTeam = GameManager::getGameByPlayer($attacker)->getTeamByPlayer($attacker);
-            if ($attackerTeam != null) {
-                if (in_array($entity, $attackerTeam->getPlayers())) {
-                    $event->cancel();
+            $game = GameManager::getGameByPlayer($attacker);
+            if ($game != null) {
+                $attackerTeam = $game->getTeamByPlayer($attacker);
+                if ($attackerTeam != null) {
+                    if (in_array($entity, $attackerTeam->getPlayers())) {
+                        $event->cancel();
+                    }
                 }
             }
         }
+    }
+
+    public function onExplosion(EntityExplodeEvent $event): void
+    {
+        Server::getInstance()->broadcastMessage($event->getEntity()->getId() . " exploded");
+        $event->setBlockList([VanillaBlocks::WOOL(), VanillaBlocks::OAK_PLANKS(), VanillaBlocks::END_STONE()]);
     }
 
     public function onEntityDamage(EntityDamageEvent $event): void
