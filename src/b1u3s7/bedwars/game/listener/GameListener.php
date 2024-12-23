@@ -3,6 +3,7 @@
 namespace b1u3s7\bedwars\game\listener;
 
 use b1u3s7\bedwars\game\GameManager;
+use b1u3s7\bedwars\game\utils\GameUtils;
 use b1u3s7\bedwars\utils\BedIds;
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
@@ -27,6 +28,7 @@ use pocketmine\item\Item;
 use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\network\mcpe\protocol\types\BoolGameRule;
 use pocketmine\player\Player;
+use pocketmine\utils\TextFormat;
 
 class GameListener implements Listener
 {
@@ -49,6 +51,24 @@ class GameListener implements Listener
             }
             if (!$block instanceof Wool && !$block instanceof Planks && $block->getTypeId() != VanillaBlocks::END_STONE()->getTypeId()) {
                 $event->cancel();
+            }
+        }
+    }
+
+    public function onBlockPlace(BlockPlaceEvent $event): void
+    {
+        $transaction = $event->getTransaction();
+        $blocks = $transaction->getBlocks();
+
+        $player = $event->getPlayer();
+        $game = GameManager::getGameByPlayer($player);
+
+        if ($game != null) {
+            foreach($event->getTransaction()->getBlocks() as [$x, $y, $z, $block]) {
+                if ($game->isPositionInProtectedArea($block->getPosition())) {
+                    $event->cancel();
+                    $event->getPlayer()->sendMessage(TextFormat::RED . "You can not place blocks in this area!" . TextFormat::RESET);
+                }
             }
         }
     }

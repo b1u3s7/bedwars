@@ -40,10 +40,7 @@ class GameEndTask extends Task
             }
 
             WorldUtils::unloadWorld($this->game->world->getFolderName());
-            WorldUtils::unloadWorld($this->game->world_empty->getFolderName());
-
             WorldUtils::deleteWorld($this->game->world->getFolderName());
-            WorldUtils::deleteWorld($this->game->world_empty->getFolderName());
 
             $this->getHandler()->cancel();
         }

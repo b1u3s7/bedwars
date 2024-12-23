@@ -9,6 +9,7 @@ mode: # any key in mode is a gamemode (/bw join [key])
       0: # map requires name and world, team and gen
         name: Stone
         world: bwmap-stone
+        spawn_block_protection_radius: 2
         team: # keys for teams, has to be int
           0: # requires spawn gen and shop
             spawn:
@@ -23,6 +24,10 @@ mode: # any key in mode is a gamemode (/bw join [key])
               x: -2
               y: 65
               z: 17
+            upgrade:
+              x: 2
+              y: 65
+              z: 17
           1:
             spawn:
               x: 0
@@ -34,6 +39,10 @@ mode: # any key in mode is a gamemode (/bw join [key])
               z: -18
             shop:
               x: 2
+              y: 65
+              z: -17
+            upgrade:
+              x: -2
               y: 65
               z: -17
         gen: # type of gen (iron and gold)

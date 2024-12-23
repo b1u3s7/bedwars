@@ -12,10 +12,12 @@ use b1u3s7\bedwars\game\task\RespawnTask;
 use b1u3s7\bedwars\utils\BedIds;
 use b1u3s7\bedwars\utils\TeamAsColor;
 use b1u3s7\bedwars\utils\TeamColors;
+use b1u3s7\bedwars\utils\Utils;
 use b1u3s7\bedwars\utils\WorldUtils;
 use b1u3s7\bedwars\game\ItemGenerator;
 use OverflowException;
 use pocketmine\block\Bed;
+use pocketmine\block\Block;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Location;
 use pocketmine\item\VanillaItems;
@@ -35,7 +37,6 @@ class Game
     private int $teamAmount;
     private int $teamSize;
     public World $world;
-    public World $world_empty;
     private array $players = [];
     private array $teams = [];
     private array $shops = [];
@@ -48,6 +49,7 @@ class Game
     private GameTickTask $tickTask;
     private TeamUpgradeManager $teamUpgradeManager;
     private TaskHandler $tickTaskManager;
+    private $spawnBlockProtectionRadius;
 
     public function __construct(string $mode, array $players, int $mapId)
     {
@@ -56,6 +58,8 @@ class Game
         $this->teamAmount = GameUtils::$config->getNested("mode.$mode.team_amount");
         $this->teamSize = GameUtils::$config->getNested("mode.$mode.team_size");
         $this->players = $players;
+        $this->spawnBlockProtectionRadius = GameUtils::$config->getNested("mode." . $this->mode . ".map." . $this->mapId . ".spawn_block_protection_radius");
+
 
         $this->teams = $this->distributePlayersIntoTeams($this->players, $this->teamAmount, $this->teamSize);
 
@@ -76,14 +80,10 @@ class Game
     private function setupWorld($worldName): void
     {
         $game_world_name = $this->mode . time();
-        $game_world_name_empty = $game_world_name . "-empty";
         WorldUtils::duplicateWorld($worldName, $game_world_name);
-        WorldUtils::duplicateWorld($worldName, $game_world_name_empty);
         WorldUtils::loadWorld($game_world_name);
-        WorldUtils::loadWorld($game_world_name_empty);
 
         $this->world = Server::getInstance()->getWorldManager()->getWorldByName($game_world_name);
-        $this->world_empty = Server::getInstance()->getWorldManager()->getWorldByName($game_world_name_empty);
     }
 
     private function setupShops(): void
@@ -227,6 +227,21 @@ class Game
         return $teams;
     }
 
+    public function getTeamSpawns(): array
+    {
+        return $this->teamSpawns;
+    }
+
+    public function getMode(): string
+    {
+        return $this->mode;
+    }
+
+    public function getMapId(): int
+    {
+        return $this->mapId;
+    }
+
     public function getPlayers(): array
     {
         return $this->players;
@@ -276,6 +291,16 @@ class Game
                 }
             }
         }
+    }
+
+    public function isPositionInProtectedArea(Position $position): bool
+    {
+        foreach ($this->getTeamSpawns() as $teamSpawn) {
+            if (Utils::isPositionInArea($position, $teamSpawn, $this->spawnBlockProtectionRadius)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function bedBroken(Bed $bed, Player $player): void
