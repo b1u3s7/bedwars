@@ -42,6 +42,10 @@ class ShopForm extends SimpleForm
 
             $this->addButton("Pickaxe - " . $tools[0]->getTierDisplayName());
             $this->addButton("Axe - " . $tools[1]->getTierDisplayName());
+
+            $this->addButton("Chainmail Armor");
+            $this->addButton("Iron Armor");
+            $this->addButton("Diamond Armor");
         }
     }
 
@@ -78,31 +82,33 @@ class ShopForm extends SimpleForm
             case 9:
                 if ($this->tools[0]->canIncreaseTier()) {
                     $price = $this->tools[0]->getPrice($this->tools[0]->getTier() + 1);
-                    if ($player->getInventory()->contains($price)) {
-                        ShopHelper::removeItems($player, $price);
+                    if (ShopHelper::transaction($player, $price)) {
                         $this->tools[0]->increaseTier();
                         $this->tools[0]->addOrReplaceToPlayerInv($player);
-                    } else {
-                        $player->sendMessage("Too broke");
                     }
                 } else {
                     $player->sendMessage("Can't increase tier");
                 }
                 break;
-            case
-            10:
+            case 10:
                 if ($this->tools[1]->canIncreaseTier()) {
                     $price = $this->tools[1]->getPrice($this->tools[1]->getTier() + 1);
-                    if ($player->getInventory()->contains($price)) {
-                        ShopHelper::removeItems($player, $price);
+                    if (ShopHelper::transaction($player, $price)) {
                         $this->tools[1]->increaseTier();
                         $this->tools[1]->addOrReplaceToPlayerInv($player);
-                    } else {
-                        $player->sendMessage("Too broke");
                     }
                 } else {
                     $player->sendMessage("Can't increase tier");
                 }
+                break;
+            case 11:
+                ShopHelper::buyArmor($player, VanillaItems::CHAINMAIL_LEGGINGS(), VanillaItems::CHAINMAIL_BOOTS(), VanillaItems::COPPER_INGOT()->setCount(4));
+                break;
+            case 12:
+                ShopHelper::buyArmor($player, VanillaItems::IRON_LEGGINGS(), VanillaItems::IRON_BOOTS(), VanillaItems::COPPER_INGOT()->setCount(10));
+                break;
+            case 13:
+                ShopHelper::buyArmor($player, VanillaItems::DIAMOND_LEGGINGS(), VanillaItems::DIAMOND_BOOTS(), VanillaItems::GOLD_INGOT()->setCount(3));
                 break;
         }
     }

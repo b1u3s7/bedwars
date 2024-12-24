@@ -20,9 +20,12 @@ use pocketmine\event\entity\EntityExplodeEvent;
 use pocketmine\event\entity\EntityMotionEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerBedEnterEvent;
+use pocketmine\event\player\PlayerDropItemEvent;
+use pocketmine\event\player\PlayerExhaustEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\item\VanillaItems;
 use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\network\mcpe\protocol\types\BoolGameRule;
 use pocketmine\player\GameMode;
@@ -167,7 +170,47 @@ class GameListener implements Listener
         }
     }
 
-    public function onExplosion(EntityExplodeEvent $event): void
+    public function onPlayerDropItem(PlayerDropItemEvent $event): void
+    {
+        $itemId = $event->getItem()->getTypeId();
+        if ($itemId === VanillaItems::WOODEN_PICKAXE()->getTypeId() ||
+            $itemId === VanillaItems::STONE_PICKAXE()->getTypeId() ||
+            $itemId === VanillaItems::IRON_PICKAXE()->getTypeId() ||
+            $itemId === VanillaItems::GOLDEN_PICKAXE()->getTypeId() ||
+            $itemId === VanillaItems::DIAMOND_PICKAXE()->getTypeId() ||
+            $itemId === VanillaItems::WOODEN_AXE()->getTypeId() ||
+            $itemId === VanillaItems::STONE_AXE()->getTypeId() ||
+            $itemId === VanillaItems::IRON_AXE()->getTypeId() ||
+            $itemId === VanillaItems::GOLDEN_AXE()->getTypeId() ||
+            $itemId === VanillaItems::DIAMOND_AXE()->getTypeId() ||
+            $itemId === VanillaItems::LEATHER_CAP()->getTypeId() ||
+            $itemId === VanillaItems::LEATHER_TUNIC()->getTypeId() ||
+            $itemId === VanillaItems::LEATHER_PANTS()->getTypeId() ||
+            $itemId === VanillaItems::LEATHER_BOOTS()->getTypeId() ||
+            $itemId === VanillaItems::CHAINMAIL_HELMET()->getTypeId() ||
+            $itemId === VanillaItems::CHAINMAIL_CHESTPLATE()->getTypeId() ||
+            $itemId === VanillaItems::CHAINMAIL_LEGGINGS()->getTypeId() ||
+            $itemId === VanillaItems::CHAINMAIL_BOOTS()->getTypeId() ||
+            $itemId === VanillaItems::IRON_HELMET()->getTypeId() ||
+            $itemId === VanillaItems::IRON_CHESTPLATE()->getTypeId() ||
+            $itemId === VanillaItems::IRON_LEGGINGS()->getTypeId() ||
+            $itemId === VanillaItems::IRON_BOOTS()->getTypeId() ||
+            $itemId === VanillaItems::DIAMOND_HELMET()->getTypeId() ||
+            $itemId === VanillaItems::DIAMOND_CHESTPLATE()->getTypeId() ||
+            $itemId === VanillaItems::DIAMOND_LEGGINGS()->getTypeId() ||
+            $itemId === VanillaItems::DIAMOND_BOOTS()->getTypeId()) {
+            $event->cancel();
+        }
+
+    }
+
+    public function onPlayerExhaust(PlayerExhaustEvent $event): void
+    {
+        $event->cancel();
+    }
+
+    public
+    function onExplosion(EntityExplodeEvent $event): void
     {
         $blockList = [];
         foreach ($event->getBlockList() as $block) {
@@ -180,7 +223,8 @@ class GameListener implements Listener
         $event->setYield(0);
     }
 
-    public function onEntityDamage(EntityDamageEvent $event): void
+    public
+    function onEntityDamage(EntityDamageEvent $event): void
     {
         $player = $event->getEntity();
         if ($player instanceof Player) {
