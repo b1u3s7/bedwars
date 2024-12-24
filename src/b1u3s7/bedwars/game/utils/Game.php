@@ -5,10 +5,9 @@ namespace b1u3s7\bedwars\game\utils;
 use b1u3s7\bedwars\Bedwars;
 use b1u3s7\bedwars\game\entity\ShopVillager;
 use b1u3s7\bedwars\game\entity\UpgradeVillager;
-use b1u3s7\bedwars\game\GameManager;
+use b1u3s7\bedwars\game\item\UpgradeableTool;
 use b1u3s7\bedwars\game\task\GameEndTask;
 use b1u3s7\bedwars\game\task\GameTickTask;
-use b1u3s7\bedwars\game\task\RespawnTask;
 use b1u3s7\bedwars\utils\BedIds;
 use b1u3s7\bedwars\utils\TeamAsColor;
 use b1u3s7\bedwars\utils\TeamColors;
@@ -17,7 +16,6 @@ use b1u3s7\bedwars\utils\WorldUtils;
 use b1u3s7\bedwars\game\ItemGenerator;
 use OverflowException;
 use pocketmine\block\Bed;
-use pocketmine\block\Block;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Location;
 use pocketmine\item\VanillaItems;
@@ -52,6 +50,7 @@ class Game
     private int $trapTriggerRadius;
     private array $traps;
     private int $maxTraps = 1; // maximum traps for a team
+    private array $tools = []; // player uuid as key
 
     public function __construct(string $mode, array $players, int $mapId)
     {
@@ -190,6 +189,9 @@ class Game
             $z = GameUtils::$config->getNested("mode.$this->mode.map." . $this->mapId . ".team.$teamId.spawn.z");
             $this->teamSpawns[$teamId] = new Position($x, $y, $z, $this->world);
             foreach ($team->getPlayers() as $playerIndex => $player) {
+                // upgradeable tools array
+                $this->tools[$player->getUniqueId()->toString()] = [new UpgradeableTool(UpgradeableTool::PICKAXE), new UpgradeableTool(UpgradeableTool::AXE)];
+
                 $player->getInventory()->clearAll();
                 $player->getArmorInventory()->clearAll();
 
@@ -268,6 +270,11 @@ class Game
             }
         }
         return null;
+    }
+
+    public function getPlayerTools(Player $player): array
+    {
+        return $this->tools[$player->getUniqueId()->toString()];
     }
 
     public function getTeamByPlayer(Player $player): ?Team
@@ -405,9 +412,7 @@ class Game
     {
         if (in_array($player, $this->players)) {
             $team = $this->getTeamByPlayer($player);
-            $respawn_task = new RespawnTask($player, $this->teamSpawns[$team->getId()]);
-            $player->setHealth($player->getMaxHealth());
-            Bedwars::getInstance()->getScheduler()->scheduleRepeatingTask($respawn_task, 20);
+            $this->tickTask->addRespawningPlayer($player, $this->teamSpawns[$team->getId()], $this->tools[$player->getUniqueId()->toString()], 3);
         }
     }
 

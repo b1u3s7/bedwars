@@ -56,7 +56,7 @@ class ShopVillager extends Entity
             if ($damager instanceof Player) {
                 if (GameManager::getGameByPlayer($damager) != null && $damager->getGamemode() == GameMode::SURVIVAL)
                 {
-                    $damager->sendForm(new ShopForm(GameManager::getGameByPlayer($damager)->getTeamByPlayer($damager)->getId()));
+                    $damager->sendForm(new ShopForm($damager, GameManager::getGameByPlayer($damager)->getTeamByPlayer($damager)->getId()));
                 }
             }
         }

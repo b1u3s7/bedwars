@@ -3,44 +3,30 @@
 namespace b1u3s7\bedwars\game\listener;
 
 use b1u3s7\bedwars\game\GameManager;
-use b1u3s7\bedwars\game\utils\GameUtils;
 use b1u3s7\bedwars\utils\BedIds;
 use b1u3s7\bedwars\utils\Utils;
 use pocketmine\block\Bed;
-use pocketmine\block\Block;
-use pocketmine\block\BlockIdentifier;
-use pocketmine\block\BlockTypeIds;
 use pocketmine\block\Planks;
-use pocketmine\block\RuntimeBlockStateRegistry;
 use pocketmine\block\TNT;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\block\Wool;
-use pocketmine\entity\Entity;
-use pocketmine\entity\EntityFactory;
 use pocketmine\entity\Location;
 use pocketmine\entity\object\PrimedTNT;
-use pocketmine\entity\Villager;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\EntityExplodeEvent;
 use pocketmine\event\entity\EntityMotionEvent;
-use pocketmine\event\entity\EntityPreExplodeEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerBedEnterEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\player\PlayerQuitEvent;
-use pocketmine\item\enchantment\EnchantmentInstance;
-use pocketmine\item\enchantment\VanillaEnchantments;
-use pocketmine\item\Item;
-use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\GameRulesChangedPacket;
 use pocketmine\network\mcpe\protocol\types\BoolGameRule;
-use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
+use pocketmine\player\GameMode;
 use pocketmine\player\Player;
-use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 
 class GameListener implements Listener
@@ -136,7 +122,7 @@ class GameListener implements Listener
                 $position = $player->getPosition();
 
                 // if player in void
-                if ($position->getY() <= 10) {
+                if ($position->getY() <= 10 && $player->getGamemode() == GameMode::SURVIVAL) {
                     $game = GameManager::getGameByPlayer($player);
                     $game?->killPlayer($player);
                 }
